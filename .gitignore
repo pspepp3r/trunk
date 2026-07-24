@@ -1,0 +1,11 @@
+/vendor/
+
+.phpunit.cache/
+.phpunit.result.cache
+
+/docs/node_modules/
+/docs/.vitepress/dist/
+/docs/.vitepress/cache/
+
+Thumbs.db
+.DS_Store
