@@ -13,4 +13,4 @@ npm run docs:preview   # serve the built output
 
 ## Contributing
 
-Found something unclear, outdated, or missing? Pages live under [`./guide/`](guide) as plain Markdown - open a PR. Small fixes (typos, broken links, a missing option) are welcome without prior discussion; anything that reorganizes a page or adds a new one is easier to land if you open an issue first.
+Found something unclear, outdated, or missing? Pages live under [`guide/`](guide/getting-started.md) as plain Markdown - open a PR. Small fixes (typos, broken links, a missing option) are welcome without prior discussion; anything that reorganizes a page or adds a new one is easier to land if you open an issue first.

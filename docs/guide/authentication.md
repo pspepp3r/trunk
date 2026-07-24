@@ -14,7 +14,13 @@ return [
 ];
 ```
 
-`JWT_SECRET` **must** be at least 32 bytes - HS256 requires a 256-bit key and throws if it's shorter.
+`JWT_SECRET` **must** be at least 32 bytes - HS256 requires a 256-bit key and throws if it's shorter. Generate one instead of typing it by hand:
+
+```bash
+php trunk key:generate
+```
+
+This writes a random 32-byte secret (base64-encoded) directly into `JWT_SECRET` in your `.env`, replacing whatever was there. If no `.env` file exists yet, it prints the value instead so you can add it yourself.
 
 ## Issuing a token
 

@@ -39,7 +39,11 @@ DB_PASSWORD=
 JWT_SECRET=change-me-to-a-random-32-plus-byte-string
 ```
 
-`JWT_SECRET` must be at least 32 bytes (256 bits) - HS256 rejects shorter keys.
+`JWT_SECRET` must be at least 32 bytes (256 bits) - HS256 rejects shorter keys. Generate one rather than typing it by hand:
+
+```bash
+php trunk key:generate
+```
 
 ## Running the server
 
@@ -51,7 +55,7 @@ This boots a ReactPHP HTTP server on `127.0.0.1:{APP_PORT}` (default `8080`). Un
 
 ## Project layout
 
-```
+```text
 your-app/
   bootstrap/app.php     # builds the App, loads config + routes
   config/                # app.php, database.php, auth.php, events.php, routes.php, ...
