@@ -19,6 +19,14 @@ class App
     private array $loadedProviders = [];
     private string $basePath = '';
 
+    private array $defaultProviders = [
+        \Trunk\Providers\LogServiceProvider::class,
+        \Trunk\Providers\DatabaseServiceProvider::class,
+        \Trunk\Providers\SessionServiceProvider::class,
+        \Trunk\Providers\EventServiceProvider::class,
+        \Trunk\Providers\AuthServiceProvider::class,
+    ];
+
     public function __construct(?Container $container = null)
     {
         self::$instance = $this;
@@ -91,15 +99,10 @@ class App
         $this->container->singleton(\Trunk\Config\Repository::class, $configRepo);
 
         // Register Service Providers
-        $providers = $configRepo->get('app.providers', [
-            \Trunk\Providers\LogServiceProvider::class,
-            \Trunk\Providers\DatabaseServiceProvider::class,
-            \Trunk\Providers\SessionServiceProvider::class,
-            \Trunk\Providers\EventServiceProvider::class,
-            \Trunk\Providers\AuthServiceProvider::class,
-        ]);
+        $providers = $configRepo->get('provider.providers');
+        if ($providers) $this->defaultProviders = [...$this->defaultProviders, ...$providers];
 
-        foreach ($providers as $provider) {
+        foreach ($this->defaultProviders as $provider) {
             $this->registerProvider($provider);
         }
 
