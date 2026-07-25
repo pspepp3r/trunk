@@ -3,6 +3,7 @@
 namespace Trunk\Console;
 
 use Trunk\App;
+use Trunk\Console\Command\DbCreateCommand;
 use Trunk\Console\Command\HelpCommand;
 use Trunk\Console\Command\KeyGenerateCommand;
 use Trunk\Console\Command\MakeControllerCommand;
@@ -29,6 +30,7 @@ class Kernel
             'make:middleware' => MakeMiddlewareCommand::class,
             'schema:sync' => SchemaSyncCommand::class,
             'make:migration' => MakeMigrationCommand::class,
+            'db:create' => DbCreateCommand::class,
             'migrate' => MigrateCommand::class,
             'migrate:rollback' => MigrateRollbackCommand::class,
             'migrate:status' => MigrateStatusCommand::class,

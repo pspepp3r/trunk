@@ -58,7 +58,9 @@ class Repository
         $id = null;
 
         foreach ($properties as $property) {
-            $property->setAccessible(true);
+            if (PHP_VERSION_ID >= 80100) {
+                $property->setAccessible(true);
+            }
             $name = $property->getName();
 
             // Check if property is initialized
@@ -93,7 +95,9 @@ class Repository
                 $insertId = $this->db->grammar()->extractInsertId($result, $this->primaryKey);
                 if ($insertId !== null) {
                     $pkProp = $reflector->getProperty($this->primaryKey);
-                    $pkProp->setAccessible(true);
+                    if (PHP_VERSION_ID >= 80100) {
+                        $pkProp->setAccessible(true);
+                    }
                     $pkProp->setValue($entity, $insertId);
                 }
                 return $entity;
@@ -123,7 +127,9 @@ class Repository
     {
         $reflector = new ReflectionClass($entity);
         $pkProp = $reflector->getProperty($this->primaryKey);
-        $pkProp->setAccessible(true);
+        if (PHP_VERSION_ID >= 80100) {
+            $pkProp->setAccessible(true);
+        }
         $id = $pkProp->getValue($entity);
 
         if ($id === null) {
@@ -136,14 +142,16 @@ class Repository
 
     protected function mapRowToEntity(array $row): object
     {
-        $entity = new ReflectionClass($this->entityClass)->newInstanceWithoutConstructor();
+        $entity = (new ReflectionClass($this->entityClass))->newInstanceWithoutConstructor();
         $reflector = new ReflectionClass($entity);
 
         foreach ($row as $field => $value) {
             $propertyName = $this->camelCase($field);
             if ($reflector->hasProperty($propertyName)) {
                 $property = $reflector->getProperty($propertyName);
-                $property->setAccessible(true);
+                if (PHP_VERSION_ID >= 80100) {
+                    $property->setAccessible(true);
+                }
                 $property->setValue($entity, $value);
             }
         }

@@ -26,6 +26,7 @@ php trunk help
 
 | Command | Description |
 | --- | --- |
+| `db:create` | Creates the database named in `database.connections.{driver}.database` if it doesn't already exist yet. Safe to run repeatedly. Run this once before your first `migrate` on a fresh setup. |
 | `migrate` | Runs all pending migrations, in order. |
 | `migrate:status` | Lists every migration with `Ran (batch N)` or `Pending`. |
 | `migrate:rollback [--step=N]` | Rolls back the last batch (or the last `N` batches). |
@@ -44,6 +45,7 @@ See [Authentication](/guide/authentication) for how `JWT_SECRET` is used.
 ## Notes
 
 - Commands that touch the database (`migrate*`, `schema:sync`) boot service providers and run the ReactPHP event loop for the duration of the command, then exit cleanly.
+- `db:create` supports `mysql` and `pgsql` only. MySQL connects without selecting a database and runs `CREATE DATABASE IF NOT EXISTS`; Postgres has no such clause, so it connects to the `postgres` maintenance database, checks `pg_database` first, and only creates it if missing. The database user needs `CREATE DATABASE` privileges either way.
 - `make:*` commands are purely file generators - they don't touch the database or require it to be configured.
 
 ## Writing your own commands

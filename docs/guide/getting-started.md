@@ -38,6 +38,13 @@ DB_PASSWORD=
 php trunk key:generate
 ```
 
+If `DB_DATABASE` doesn't exist on your database server yet, create it before migrating - Trunk creates tables for you, but not the database itself:
+
+```bash
+php trunk db:create
+php trunk migrate
+```
+
 ## Running the server
 
 ```bash

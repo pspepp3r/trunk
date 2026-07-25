@@ -8,6 +8,8 @@ use React\Promise\PromiseInterface;
 use Trunk\Database\Driver\Interface\DriverInterface;
 use Trunk\Database\QueryResult;
 
+use function count;
+
 class PostgresDriver implements DriverInterface
 {
     private Client $client;
@@ -36,9 +38,7 @@ class PostgresDriver implements DriverInterface
             function ($row) use (&$rows) {
                 $rows[] = (array) $row;
             },
-            function (\Throwable $e) use ($deferred) {
-                $deferred->reject($e);
-            },
+            $deferred->reject(...),
             function () use ($deferred, &$rows) {
                 $deferred->resolve(new QueryResult(
                     rows: $rows,
