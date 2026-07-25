@@ -13,19 +13,14 @@ Trunk is split into two packages:
 
 ## Creating a new app
 
-Clone or copy the skeleton app, then install its dependencies:
-
 ```bash
-composer install
+composer create-project trunk/skeleton my-app
+cd my-app
 ```
 
-Copy the environment file and adjust it for your database, JWT secret, etc.:
+This pulls the skeleton from Packagist, installs dependencies, and copies `.env.example` to `.env` for you - with a fresh, randomly-generated `JWT_SECRET` already filled in (see [Console](/guide/console) for the `key:generate` command doing this behind the scenes).
 
-```bash
-cp .env.example .env
-```
-
-Key `.env` values:
+Key `.env` values to review:
 
 ```dotenv
 APP_PORT=8080
@@ -35,11 +30,9 @@ DB_HOST=127.0.0.1
 DB_DATABASE=my_app
 DB_USERNAME=root
 DB_PASSWORD=
-
-JWT_SECRET=change-me-to-a-random-32-plus-byte-string
 ```
 
-`JWT_SECRET` must be at least 32 bytes (256 bits) - HS256 rejects shorter keys. Generate one rather than typing it by hand:
+`JWT_SECRET` is already set for you, but if you ever need a new one (rotating it, or setting up a second environment), regenerate it rather than typing one by hand - HS256 requires at least 32 bytes and rejects shorter keys:
 
 ```bash
 php trunk key:generate
