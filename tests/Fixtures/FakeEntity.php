@@ -2,11 +2,9 @@
 
 namespace Trunk\Tests\Fixtures;
 
-use Trunk\ORM\Interface\EntityInterface;
+use Trunk\ORM\BaseEntity;
 
-class FakeEntity implements EntityInterface
+class FakeEntity extends BaseEntity
 {
-    public function __construct(public readonly int $id)
-    {
-    }
+    public function __construct(public readonly int $id) {}
 }

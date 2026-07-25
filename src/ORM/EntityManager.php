@@ -4,7 +4,7 @@ namespace Trunk\ORM;
 
 use Trunk\Database\Connection;
 use Trunk\ORM\Exception\InvalidEntityException;
-use Trunk\ORM\Interface\EntityInterface;
+use Trunk\ORM\BaseEntity;
 
 class EntityManager
 {
@@ -34,8 +34,8 @@ class EntityManager
             return $this->repositories[$entityClass];
         }
 
-        if (!is_a($entityClass, EntityInterface::class, true)) {
-            throw new InvalidEntityException("'{$entityClass}' must implement " . EntityInterface::class . ' to be managed by the ORM.');
+        if (!is_a($entityClass, BaseEntity::class, true)) {
+            throw new InvalidEntityException("'{$entityClass}' must implement " . BaseEntity::class . ' to be managed by the ORM.');
         }
 
         $table = $this->mappings[$entityClass] ?? $this->resolveTableName($entityClass);

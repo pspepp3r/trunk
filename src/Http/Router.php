@@ -14,7 +14,7 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use Trunk\Middleware\Pipeline;
 use Trunk\ORM\EntityManager;
-use Trunk\ORM\Interface\EntityInterface;
+use Trunk\ORM\BaseEntity;
 use Trunk\Validation\Exception\ValidationException;
 use Trunk\Validation\FormRequest;
 
@@ -214,7 +214,7 @@ class Router
                 $this->container !== null
                 && $type instanceof ReflectionNamedType
                 && !$type->isBuiltin()
-                && is_a($type->getName(), EntityInterface::class, true)
+                && is_a($type->getName(), BaseEntity::class, true)
                 && $this->container->has(EntityManager::class)
             ) {
                 $promises[$name] = $this->container->get(EntityManager::class)
