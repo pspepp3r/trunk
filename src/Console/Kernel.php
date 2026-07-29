@@ -36,6 +36,28 @@ class Kernel
             'migrate:status' => MigrateStatusCommand::class,
             'key:generate' => KeyGenerateCommand::class,
         ];
+        
+        $this->loadUserCommands();
+    }
+
+    private function loadUserCommands(): void
+    {
+        $commandDir = $this->app->getBasePath() . '/src/Command';
+        
+        if (!is_dir($commandDir)) {
+            return;
+        }
+
+        foreach (glob($commandDir . '/*.php') as $file) {
+            $className = 'App\\Command\\' . basename($file, '.php');
+            if (class_exists($className) && is_subclass_of($className, \Trunk\Console\Command\Command::class)) {
+                $name = method_exists($className, 'name') 
+                    ? $className::name() 
+                    : strtolower(preg_replace('/(?<!^)[A-Z]/', ':$0', str_replace('Command', '', basename($file, '.php'))));
+                
+                $this->commands[$name] = $className;
+            }
+        }
     }
 
     public function handle(array $args): void
