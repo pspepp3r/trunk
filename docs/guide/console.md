@@ -11,7 +11,7 @@ php trunk help
 
 | Command | Description |
 | --- | --- |
-| `start` | Boots the ReactPHP HTTP server on `127.0.0.1:{app.port}`. |
+| `start [--watch]` | Boots the ReactPHP HTTP server on `127.0.0.1:{app.port}`. Use `--watch` to automatically restart the server on file changes. |
 | `route:list` | Prints every registered route, method, and path. |
 
 ## Code generation
@@ -30,7 +30,7 @@ php trunk help
 | `migrate` | Runs all pending migrations, in order. |
 | `migrate:status` | Lists every migration with `Ran (batch N)` or `Pending`. |
 | `migrate:rollback [--step=N]` | Rolls back the last batch (or the last `N` batches). |
-| `schema:sync` | Reflects on `src/Entities/` and runs `CREATE TABLE IF NOT EXISTS` for each - a blunt, no-history shortcut for early prototyping. Prefer migrations once your schema needs to evolve. |
+| `orm:schema-diff` | Scans `src/Entities/` for `#[Entity]` attributes and generates a difference against the current database schema. It writes a timestamped migration file in `database/migrations/` which you can then apply using `migrate`. |
 
 See [Database & Migrations](/guide/database) for the Blueprint DSL used inside generated migrations.
 
@@ -44,7 +44,7 @@ See [Authentication](/guide/authentication) for how `JWT_SECRET` is used.
 
 ## Notes
 
-- Commands that touch the database (`migrate*`, `schema:sync`) boot service providers and run the ReactPHP event loop for the duration of the command, then exit cleanly.
+- Commands that touch the database (`migrate*`, `orm:schema-diff`) boot service providers and run the ReactPHP event loop for the duration of the command, then exit cleanly.
 - `db:create` supports `mysql` and `pgsql` only. MySQL connects without selecting a database and runs `CREATE DATABASE IF NOT EXISTS`; Postgres has no such clause, so it connects to the `postgres` maintenance database, checks `pg_database` first, and only creates it if missing. The database user needs `CREATE DATABASE` privileges either way.
 - `make:*` commands are purely file generators - they don't touch the database or require it to be configured.
 
@@ -73,10 +73,15 @@ class PingCommand extends Command
 
 `$args` is the raw `$argv` array, so `$args[2] ?? null` gets the first argument after the command name (see `MakeControllerCommand` for an example).
 
-Register it in `Kernel`'s command map (`trunk/src/Console/Kernel.php`) under whatever name you want to type on the command line:
+Your custom command is automatically discovered and registered by Trunk! As long as the class resides in `src/Command/` and extends `Command`, Trunk will scan it and register it. 
+
+By default, the command's name in the CLI will be derived from the class name (e.g. `PingCommand` becomes `ping`). If you want a specific name, define a static `name()` method on your class:
 
 ```php
-'ping' => \App\Console\Command\PingCommand::class,
+    public static function name(): string
+    {
+        return 'app:ping';
+    }
 ```
 
-Since commands are resolved through the container (`$container->get($commandClass)`), constructor dependencies beyond `App` are autowired the same as controllers and middleware - type-hint `EntityManager`, `Connection`, or anything else you need.
+Since commands are resolved through the container, constructor dependencies beyond `App` are autowired the same as controllers and middleware - type-hint `EntityManager`, `Connection`, or anything else you need.

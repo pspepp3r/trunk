@@ -88,24 +88,36 @@ php trunk migrate:rollback      # roll back the last batch
 php trunk migrate:rollback --step=3   # roll back the last 3 batches
 ```
 
-### `schema:sync` - quick prototyping only
+### `orm:schema-diff`
 
-`php trunk schema:sync` reflects on everything in `src/Entities/` and runs `CREATE TABLE IF NOT EXISTS` for each one, inferring columns from property types. It's a blunt, no-migration-history shortcut for early prototyping - reach for real migrations (above) once your schema needs to evolve or you need to track what's been applied.
+`php trunk orm:schema-diff` scans `src/Entities/` for `#[Entity]` attributes and compares them against your current database schema. It then generates a timestamped migration file in `database/migrations/` containing the difference (e.g. `CREATE TABLE` and `ALTER TABLE` statements). This offers a seamless way to evolve your database schema without writing migrations by hand.
 
 ## The ORM
 
-Entities are plain PHP objects that implement `Trunk\ORM\Interface\EntityInterface` - the framework uses this marker to recognize what it's allowed to persist (it's also what makes [route model binding](/guide/routing#route-model-binding) work):
+Entities are plain PHP objects that implement `Trunk\ORM\Interface\EntityInterface`. Trunk uses PHP 8 attributes to map these entities to your database tables and columns:
 
 ```php
 namespace App\Entities;
 
 use Trunk\ORM\Interface\EntityInterface;
+use Trunk\Database\ORM\Attributes\Entity;
+use Trunk\Database\ORM\Attributes\Column;
+use Trunk\Database\ORM\Attributes\OneToMany;
 
+#[Entity(table: 'users')]
 class User implements EntityInterface
 {
+    #[Column(primary: true)]
     private ?int $id = null;
+    
+    #[Column(type: 'VARCHAR', length: 255)]
     private string $name;
+    
+    #[Column(type: 'VARCHAR', length: 255, unique: true)]
     private string $email;
+    
+    #[OneToMany(targetEntity: Post::class, mappedBy: 'user')]
+    private array $posts = [];
 
     public function getId(): ?int { return $this->id; }
     public function getName(): string { return $this->name; }
@@ -114,6 +126,8 @@ class User implements EntityInterface
     public function setEmail(string $email): void { $this->email = $email; }
 }
 ```
+
+Trunk supports all typical relationship attributes: `#[OneToOne]`, `#[OneToMany]`, `#[ManyToOne]`, and `#[ManyToMany]`. When executing `orm:schema-diff`, the framework will read these attributes and automatically map foreign keys and pivot tables.
 
 Fetch a repository through the `EntityManager` (autowired, no config needed for the default table-name convention - `User` maps to `users`):
 

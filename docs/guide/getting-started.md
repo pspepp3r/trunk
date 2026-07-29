@@ -18,7 +18,9 @@ composer create-project trunk/skeleton my-app
 cd my-app
 ```
 
-This pulls the skeleton from Packagist, installs dependencies, and copies `.env.example` to `.env` for you - with a fresh, randomly-generated `JWT_SECRET` already filled in (see [Console](/guide/console) for the `key:generate` command doing this behind the scenes).
+This pulls the skeleton from Packagist, installs dependencies, and runs an interactive installer. The installer will prompt you to select your preferred database (MySQL, PostgreSQL, or None) and API style (REST or GraphQL), so you only install what you actually need.
+
+It also copies `.env.example` to `.env` for you - with a fresh, randomly-generated `JWT_SECRET` already filled in (see [Console](/guide/console) for the `key:generate` command doing this behind the scenes).
 
 Key `.env` values to review:
 
@@ -49,6 +51,12 @@ php trunk migrate
 
 ```bash
 php trunk start
+```
+
+You can also run the server in watch mode so it automatically restarts on file changes (e.g. in `src/` or `config/`):
+
+```bash
+php trunk start --watch
 ```
 
 This boots a ReactPHP HTTP server on `127.0.0.1:{APP_PORT}` (default `8080`). Unlike PHP-FPM, this process stays running and handles every request through the same event loop - there's no per-request bootstrap cost, but it also means a blocking call anywhere in your request path stalls every other in-flight request. See [Routing](/guide/routing) and [gRPC Client](/guide/grpc) for how Trunk avoids that.
