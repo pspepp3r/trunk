@@ -48,6 +48,10 @@ class Logger extends AbstractLogger
         if ($this->logPath === 'php://stdout' || $this->logPath === 'php://stderr') {
             file_put_contents($this->logPath, $formatted);
         } else {
+            $dir = dirname($this->logPath);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
             // Async non-blocking file append fallback (using standard stream write, which is fast)
             // In a high-performance system, we could queue logs or use react/filesystem.
             @file_put_contents($this->logPath, $formatted, FILE_APPEND);
