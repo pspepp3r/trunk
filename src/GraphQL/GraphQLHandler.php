@@ -26,9 +26,21 @@ class GraphQLHandler
     public function handle(ServerRequestInterface $request): PromiseInterface
     {
         $body = (array) ($request->getParsedBody() ?? []);
-        $query = $body['query'] ?? '';
-        $variables = $body['variables'] ?? null;
-        $operationName = $body['operationName'] ?? null;
+        $queryParams = $request->getQueryParams();
+        
+        $query = $body['query'] ?? $queryParams['query'] ?? '';
+        $variables = $body['variables'] ?? $queryParams['variables'] ?? null;
+        $operationName = $body['operationName'] ?? $queryParams['operationName'] ?? null;
+
+        if (is_string($variables)) {
+            $variables = json_decode($variables, true);
+        }
+
+        if (empty($query)) {
+            return \React\Promise\resolve(
+                Response::json(['errors' => [['message' => 'GraphQL query is missing']]])->withStatus(400)
+            );
+        }
 
         $adapter = new ReactPromiseAdapter();
 
