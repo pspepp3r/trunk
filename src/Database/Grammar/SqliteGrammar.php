@@ -28,6 +28,29 @@ class SqliteGrammar implements GrammarInterface
         };
     }
 
+    public function columnSql(string $type, array $params = []): string
+    {
+        return match ($type) {
+            'string' => 'VARCHAR(' . ($params['length'] ?? 255) . ')',
+            'text' => 'TEXT',
+            'integer', 'bigInteger', 'boolean' => 'INTEGER',
+            'float' => 'REAL',
+            'dateTime', 'timestamp' => 'DATETIME',
+            'json' => 'TEXT',
+            default => 'TEXT',
+        };
+    }
+
+    public function insertReturningClause(string $primaryKey): string
+    {
+        return '';
+    }
+
+    public function extractInsertId(\Trunk\Database\QueryResult $result, string $primaryKey): int|string|null
+    {
+        return $result->insertId;
+    }
+
     public function tableOptions(): string
     {
         return '';
