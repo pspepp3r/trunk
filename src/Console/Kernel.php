@@ -13,7 +13,7 @@ use Trunk\Console\Command\MigrateCommand;
 use Trunk\Console\Command\MigrateRollbackCommand;
 use Trunk\Console\Command\MigrateStatusCommand;
 use Trunk\Console\Command\RouteListCommand;
-use Trunk\Console\Command\SchemaSyncCommand;
+use Trunk\Console\Command\SchemaDiffCommand;
 use Trunk\Console\Command\StartCommand;
 
 class Kernel
@@ -28,7 +28,7 @@ class Kernel
             'route:list' => RouteListCommand::class,
             'make:controller' => MakeControllerCommand::class,
             'make:middleware' => MakeMiddlewareCommand::class,
-            'schema:sync' => SchemaSyncCommand::class,
+            'orm:schema-diff' => SchemaDiffCommand::class,
             'make:migration' => MakeMigrationCommand::class,
             'db:create' => DbCreateCommand::class,
             'migrate' => MigrateCommand::class,
