@@ -25,6 +25,13 @@ return [
             'username' => $_ENV['DB_USERNAME'] ?? 'forge',
             'password' => $_ENV['DB_PASSWORD'] ?? '',
         ],
+        'sqlite' => [
+            'database' => $_ENV['DB_DATABASE'] ?? ':memory:',
+        ],
+    ],
+    'redis' => [
+        'host' => $_ENV['REDIS_HOST'] ?? '127.0.0.1',
+        'port' => $_ENV['REDIS_PORT'] ?? 6379,
     ],
 ];
 ```
@@ -34,6 +41,19 @@ Switch drivers by setting `DB_CONNECTION=pgsql` in `.env` - your migrations, ORM
 ::: warning MongoDB isn't supported
 There's no maintained non-blocking MongoDB client for ReactPHP. Setting `DB_CONNECTION=mongodb` throws a clear `UnsupportedDriverException` at boot rather than silently blocking the event loop.
 :::
+
+## Redis
+
+Trunk provides an async Redis client via `Trunk\Database\RedisConnection`. This wraps `clue/reactphp-redis` and forwards commands automatically, returning promises:
+
+```php
+$redis = $app->getContainer()->get(\Trunk\Database\RedisConnection::class);
+$redis->set('key', 'value')->then(function () use ($redis) {
+    return $redis->get('key');
+})->then(function ($value) {
+    echo $value; // 'value'
+});
+```
 
 ## Running raw queries
 

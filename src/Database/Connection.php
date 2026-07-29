@@ -27,8 +27,9 @@ class Connection
         }
 
         [$this->driver, $this->grammar] = match ($driverName) {
-            'mysql' => [new MysqlDriver($dbConfig), new MysqlGrammar()],
-            'pgsql' => [new PostgresDriver($dbConfig), new PostgresGrammar()],
+            'mysql' => [new \Trunk\Database\Driver\MysqlDriver($dbConfig), new \Trunk\Database\Grammar\MysqlGrammar()],
+            'pgsql' => [new \Trunk\Database\Driver\PostgresDriver($dbConfig), new \Trunk\Database\Grammar\PostgresGrammar()],
+            'sqlite' => [new \Trunk\Database\Driver\SqliteDriver($dbConfig), new \Trunk\Database\Grammar\SqliteGrammar()],
             'mongodb' => throw new UnsupportedDriverException(
                 "The 'mongodb' driver is not yet supported by Trunk's database layer. There is no maintained non-blocking MongoDB client for ReactPHP; wiring one up today would mean silently blocking the event loop on every query."
             ),

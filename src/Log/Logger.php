@@ -50,11 +50,15 @@ class Logger extends AbstractLogger
         } else {
             $dir = dirname($this->logPath);
             if (!is_dir($dir)) {
-                @mkdir($dir, 0777, true);
+                if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+                    throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
+                }
             }
             // Async non-blocking file append fallback (using standard stream write, which is fast)
             // In a high-performance system, we could queue logs or use react/filesystem.
-            @file_put_contents($this->logPath, $formatted, FILE_APPEND);
+            if (file_put_contents($this->logPath, $formatted, FILE_APPEND) === false) {
+                throw new \RuntimeException(sprintf('Failed to write log to "%s"', $this->logPath));
+            }
         }
     }
 

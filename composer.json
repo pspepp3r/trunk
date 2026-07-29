@@ -19,6 +19,8 @@
 	"suggest": {
 		"react/mysql": "Required to use MySQL database connection",
 		"voryx/pgasync": "Required to use PostgreSQL database connection",
+		"clue/reactphp-sqlite": "Required to use SQLite database connection",
+		"clue/reactphp-redis": "Required to use Redis cache/connection",
 		"webonyx/graphql-php": "Required to build a GraphQL API"
 	},
 	"require-dev": {
@@ -26,6 +28,8 @@
 		"react/async": "^4.3",
 		"react/mysql": "^0.7 || ^0.8",
 		"voryx/pgasync": "^2.2",
+		"clue/reactphp-sqlite": "^1.4",
+		"clue/reactphp-redis": "^2.6",
 		"webonyx/graphql-php": "^15.0"
 	},
 	"autoload": {
