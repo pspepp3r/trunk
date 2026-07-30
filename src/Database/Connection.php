@@ -16,6 +16,7 @@ class Connection
 {
     private DriverInterface $driver;
     private GrammarInterface $grammar;
+    private string $driverName;
 
     public function __construct(Repository $config)
     {
@@ -25,6 +26,8 @@ class Connection
         if (!$dbConfig) {
             throw new \Exception("Database configuration for driver '{$driverName}' is missing.");
         }
+
+        $this->driverName = $driverName;
 
         [$this->driver, $this->grammar] = match ($driverName) {
             'mysql' => [new \Trunk\Database\Driver\MysqlDriver($dbConfig), new \Trunk\Database\Grammar\MysqlGrammar()],
@@ -45,5 +48,10 @@ class Connection
     public function grammar(): GrammarInterface
     {
         return $this->grammar;
+    }
+
+    public function driverName(): string
+    {
+        return $this->driverName;
     }
 }

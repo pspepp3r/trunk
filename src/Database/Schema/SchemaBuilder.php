@@ -33,6 +33,15 @@ class SchemaBuilder
         return $promise;
     }
 
+    /**
+     * Escape hatch for SQL the Blueprint DSL doesn't model (ALTER TABLE ADD CONSTRAINT,
+     * etc.) - used by the generated orm:schema-diff migrations.
+     */
+    public function raw(string $sql, array $params = []): PromiseInterface
+    {
+        return $this->db->query($sql, $params);
+    }
+
     public function drop(string $table): PromiseInterface
     {
         return $this->db->query(sprintf(

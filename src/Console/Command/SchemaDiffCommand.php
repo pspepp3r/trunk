@@ -5,14 +5,16 @@ namespace Trunk\Console\Command;
 use React\EventLoop\Loop;
 use ReflectionClass;
 use Trunk\Database\Connection;
-use Trunk\Database\ORM\Attributes\Column;
 use Trunk\Database\ORM\Attributes\Entity;
+use Trunk\Database\Schema\Diff\SchemaComparator;
+use Trunk\Database\Schema\Diff\SchemaIntrospector;
+use Trunk\Database\Schema\Diff\SchemaReader;
 
 class SchemaDiffCommand extends Command
 {
     public static function description(): string
     {
-        return 'Diff entities against database schema and generate a migration file';
+        return 'Diff entities against the live database schema and generate a migration file';
     }
 
     public function handle(array $args): void
@@ -20,7 +22,6 @@ class SchemaDiffCommand extends Command
         $this->app->bootProviders();
 
         $basePath = $this->app->getBasePath();
-        // Assuming user entities are in src/Entities or src/App/Entities. We'll check src/
         $srcDir = "{$basePath}/src";
 
         if (!is_dir($srcDir)) {
@@ -28,69 +29,34 @@ class SchemaDiffCommand extends Command
             return;
         }
 
-        $db = $this->app->getContainer()->get(Connection::class);
-        $grammar = $db->grammar();
-        
         $entities = $this->findEntities($srcDir);
         if (empty($entities)) {
             echo "No classes with #[Entity] attribute found.\n";
             return;
         }
 
-        $queries = [];
-        
-        // Simplified diff: For now, we just generate CREATE TABLE for all entities 
-        // as a prototype. A full Doctrine-style SchemaManager would inspect information_schema.
-        foreach ($entities as $class) {
-            $reflector = new ReflectionClass($class);
-            
-            $entityAttr = $reflector->getAttributes(Entity::class)[0]->newInstance();
-            $tableName = $entityAttr->table ?? strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $reflector->getShortName())) . 's';
+        $db = $this->app->getContainer()->get(Connection::class);
+        $expected = (new SchemaReader())->read($entities);
 
-            $columns = [];
-            foreach ($reflector->getProperties() as $property) {
-                $attributes = $property->getAttributes(Column::class);
-                if (empty($attributes)) {
-                    continue;
+        (new SchemaIntrospector($db))->introspect()->then(
+            function (array $actual) use ($db, $expected, $basePath) {
+                $diff = (new SchemaComparator($db->grammar()))->diff($expected, $actual);
+
+                if (empty($diff['up'])) {
+                    echo "No schema changes required.\n";
+                } else {
+                    $this->generateMigrationFile($basePath, $diff['up'], $diff['down']);
                 }
 
-                $columnAttr = $attributes[0]->newInstance();
-                
-                $name = $columnAttr->name ?? strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $property->getName()));
-                
-                if ($columnAttr->primary || $name === 'id') {
-                    $columns[] = $grammar->primaryKeyColumn($name);
-                    continue;
-                }
-
-                $type = $columnAttr->type ?? 'VARCHAR';
-                $length = $columnAttr->length ? "({$columnAttr->length})" : ($type === 'VARCHAR' ? '(255)' : '');
-                $null = $columnAttr->nullable ? 'NULL' : 'NOT NULL';
-                
-                $columns[] = sprintf('%s %s%s %s', $grammar->quoteIdentifier($name), $type, $length, $null);
+                Loop::get()->stop();
+            },
+            function (\Throwable $e) {
+                echo 'Schema diff failed: ' . $e->getMessage() . "\n";
+                Loop::get()->stop();
             }
+        );
 
-            if (empty($columns)) {
-                continue;
-            }
-
-            // We generate a "CREATE TABLE IF NOT EXISTS" for simplicity in this prototype.
-            $sql = sprintf(
-                "CREATE TABLE IF NOT EXISTS %s (\n  %s\n)%s;",
-                $grammar->quoteIdentifier($tableName),
-                implode(",\n  ", $columns),
-                $grammar->tableOptions()
-            );
-
-            $queries[] = $sql;
-        }
-
-        if (empty($queries)) {
-            echo "No schema changes required.\n";
-            return;
-        }
-
-        $this->generateMigrationFile($basePath, $queries);
+        Loop::get()->run();
     }
 
     private function findEntities(string $dir): array
@@ -100,11 +66,13 @@ class SchemaDiffCommand extends Command
         foreach ($iterator as $file) {
             if ($file->getExtension() === 'php') {
                 $content = file_get_contents($file->getPathname());
-                // Quick check to avoid loading all files
-                if (str_contains($content, '#[Entity]')) {
-                    // Extract namespace and classname
-                    if (preg_match('/namespace\s+([^;]+);/i', $content, $nsMatch) && 
-                        preg_match('/class\s+([a-zA-Z0-9_]+)/i', $content, $classMatch)) {
+                // Quick pre-filter to avoid parsing every file; matches both #[Entity] and
+                // #[Entity(table: '...')] since the attribute may or may not take arguments.
+                if (str_contains($content, '#[Entity')) {
+                    if (
+                        preg_match('/namespace\s+([^;]+);/i', $content, $nsMatch) &&
+                        preg_match('/class\s+([a-zA-Z0-9_]+)/i', $content, $classMatch)
+                    ) {
                         $className = trim($nsMatch[1]) . '\\' . trim($classMatch[1]);
                         if (!class_exists($className)) {
                             require_once $file->getPathname();
@@ -116,10 +84,11 @@ class SchemaDiffCommand extends Command
                 }
             }
         }
+
         return $entities;
     }
 
-    private function generateMigrationFile(string $basePath, array $queries): void
+    private function generateMigrationFile(string $basePath, array $upStatements, array $downStatements): void
     {
         $migrationsDir = $basePath . '/database/migrations';
         if (!is_dir($migrationsDir)) {
@@ -130,34 +99,51 @@ class SchemaDiffCommand extends Command
         $filename = "{$timestamp}_schema_diff.php";
         $filepath = "{$migrationsDir}/{$filename}";
 
-        $upSql = implode("\n\n        ", array_map(fn($q) => "\$db->query(\"" . addslashes($q) . "\");", $queries));
+        $upBody = $this->compileChain($upStatements);
+        $downBody = $this->compileChain($downStatements);
 
         $content = <<<PHP
 <?php
 
-use Trunk\Database\Migration;
-use Trunk\Database\Connection;
 use React\Promise\PromiseInterface;
+use Trunk\Database\Migration;
+use Trunk\Database\Schema\SchemaBuilder;
 
-return new class extends Migration
-{
-    public function up(Connection \$db): PromiseInterface
+// Generated by `php trunk orm:schema-diff`: introspects the live database and adds
+// whatever's missing (tables, columns, foreign keys). Never drops anything - edit
+// this file by hand if you need to remove a column or table.
+return new class extends Migration {
+    public function up(SchemaBuilder \$schema): PromiseInterface
     {
-        // Generated by schema diff
-        {$upSql}
-        
-        return \React\Promise\resolve();
+        return {$upBody};
     }
 
-    public function down(Connection \$db): PromiseInterface
+    public function down(SchemaBuilder \$schema): PromiseInterface
     {
-        // TODO: reverse diff
-        return \React\Promise\resolve();
+        return {$downBody};
     }
 };
 PHP;
 
         file_put_contents($filepath, $content);
+
         echo "Migration file generated: database/migrations/{$filename}\n";
+        foreach ($upStatements as $sql) {
+            echo '  + ' . strtok($sql, "\n") . "\n";
+        }
+    }
+
+    private function compileChain(array $statements): string
+    {
+        if (empty($statements)) {
+            return '\React\Promise\resolve(null)';
+        }
+
+        $calls = array_map(
+            fn(string $sql) => '$schema->raw(' . var_export($sql, true) . ')',
+            $statements
+        );
+
+        return implode("\n            ->then(fn() => ", $calls) . str_repeat(')', count($calls) - 1);
     }
 }

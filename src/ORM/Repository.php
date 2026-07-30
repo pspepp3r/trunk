@@ -4,7 +4,12 @@ namespace Trunk\ORM;
 
 use React\Promise\PromiseInterface;
 use ReflectionClass;
+use ReflectionProperty;
 use Trunk\Database\Connection;
+use Trunk\Database\ORM\Attributes\ManyToMany;
+use Trunk\Database\ORM\Attributes\ManyToOne;
+use Trunk\Database\ORM\Attributes\OneToMany;
+use Trunk\Database\ORM\Attributes\OneToOne;
 
 use function count;
 use function React\Promise\resolve;
@@ -49,6 +54,34 @@ class Repository
         });
     }
 
+    /**
+     * Used by EntityManager::loadRelation() for the "many" side of a relationship
+     * (e.g. all Posts where author_id = $userId) - also handy on its own for any
+     * simple equality lookup that isn't the primary key.
+     *
+     * @return PromiseInterface<object[]>
+     */
+    public function findBy(string $column, mixed $value): PromiseInterface
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE {$column} = ?";
+
+        return $this->db->query($sql, [$value])->then(function ($result) {
+            return array_map(fn(array $row) => $this->mapRowToEntity($row), $result->rows);
+        });
+    }
+
+    /**
+     * @return PromiseInterface<object|null>
+     */
+    public function findOneBy(string $column, mixed $value): PromiseInterface
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE {$column} = ? LIMIT 1";
+
+        return $this->db->query($sql, [$value])->then(function ($result) {
+            return empty($result->rows) ? null : $this->mapRowToEntity($result->rows[0]);
+        });
+    }
+
     public function persist(object $entity): PromiseInterface
     {
         $reflector = new ReflectionClass($entity);
@@ -58,12 +91,15 @@ class Repository
         $id = null;
 
         foreach ($properties as $property) {
+            if ($this->isRelationProperty($property)) {
+                continue;
+            }
+
             if (PHP_VERSION_ID >= 80100) {
                 $property->setAccessible(true);
             }
             $name = $property->getName();
 
-            // Check if property is initialized
             if (!$property->isInitialized($entity)) {
                 continue;
             }
@@ -78,7 +114,6 @@ class Repository
         }
 
         if ($id === null) {
-            // Insert
             $fields = array_keys($data);
             $placeholders = array_fill(0, count($data), '?');
 
@@ -103,7 +138,6 @@ class Repository
                 return $entity;
             });
         } else {
-            // Update
             $sets = [];
             foreach (array_keys($data) as $field) {
                 $sets[] = "{$field} = ?";
@@ -162,6 +196,15 @@ class Repository
     private function snakeCase(string $input): string
     {
         return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $input));
+    }
+
+    /** Relationship-typed properties aren't cascade-persisted - see the Database guide's Relationships section. */
+    private function isRelationProperty(ReflectionProperty $property): bool
+    {
+        return !empty($property->getAttributes(ManyToOne::class))
+            || !empty($property->getAttributes(OneToOne::class))
+            || !empty($property->getAttributes(OneToMany::class))
+            || !empty($property->getAttributes(ManyToMany::class));
     }
 
     private function camelCase(string $input): string
