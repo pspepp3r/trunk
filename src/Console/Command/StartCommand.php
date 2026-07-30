@@ -45,12 +45,16 @@ class StartCommand extends Command
 
     private function spawnProcess(string $port): \React\ChildProcess\Process
     {
-        // argv[0] is usually the trunk executable (e.g. 'trunk' or 'bin/trunk')
         $executable = $_SERVER['argv'][0] ?? 'trunk';
         $cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($executable) . ' start';
-        
-        $process = new \React\ChildProcess\Process($cmd);
-        $process->start();
+
+        // Windows-blocking-stdio workaround - see the Console guide's --watch section.
+        $process = new \React\ChildProcess\Process($cmd, null, null, [
+            ['socket'],
+            ['socket'],
+            ['socket'],
+        ]);
+        $process->start(\React\EventLoop\Loop::get());
 
         $process->stdout->on('data', function ($chunk) {
             echo $chunk;
@@ -66,7 +70,6 @@ class StartCommand extends Command
     private function getLastMtime(): int
     {
         $maxMtime = 0;
-        // Watch common directories
         $directories = [getcwd() . '/src', getcwd() . '/config', getcwd() . '/bootstrap'];
 
         foreach ($directories as $dir) {

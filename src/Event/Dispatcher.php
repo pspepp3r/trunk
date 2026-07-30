@@ -20,20 +20,12 @@ class Dispatcher
         $this->emitter = new EventEmitter();
     }
 
-    /**
-     * Register a listener for an event class. The listener receives the event object
-     * and may optionally return a PromiseInterface for async work.
-     */
     public function listen(string $eventClass, callable $listener): void
     {
         $this->emitter->on($eventClass, $listener);
     }
 
-    /**
-     * Dispatch an event to all its listeners, awaiting any promises they return.
-     * Listener failures are logged and do not reject the returned promise or affect
-     * other listeners; the promise always resolves with the event object.
-     */
+    /** Listener failures are logged, not thrown - see the Events guide's dispatch semantics section. */
     public function dispatch(object $event): PromiseInterface
     {
         $listeners = $this->emitter->listeners(get_class($event));
@@ -60,11 +52,7 @@ class Dispatcher
         );
     }
 
-    /**
-     * Dispatch an event without making the caller wait for listeners to finish.
-     * Use this for side effects (emails, webhooks, analytics) that shouldn't delay
-     * the response. Listener failures are still logged.
-     */
+    /** Fire-and-forget dispatch for side effects that shouldn't delay the response - see the Events guide. */
     public function dispatchAsync(object $event): void
     {
         $this->dispatch($event);

@@ -54,8 +54,7 @@ class Logger extends AbstractLogger
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
                 }
             }
-            // Async non-blocking file append fallback (using standard stream write, which is fast)
-            // In a high-performance system, we could queue logs or use react/filesystem.
+            // Blocking file write, not react/filesystem - see the Logging guide.
             if (file_put_contents($this->logPath, $formatted, FILE_APPEND) === false) {
                 throw new \RuntimeException(sprintf('Failed to write log to "%s"', $this->logPath));
             }
@@ -76,7 +75,7 @@ class Logger extends AbstractLogger
         $replace = [];
         foreach ($context as $key => $val) {
             if (is_scalar($val) || is_object($val) && method_exists($val, '__toString')) {
-                $replace["{$key}"] = $val;
+                $replace['{' . $key . '}'] = $val;
             }
         }
         return strtr($message, $replace);

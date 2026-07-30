@@ -11,31 +11,20 @@ use function array_key_exists;
 
 abstract class BaseEntity implements ArrayAccess, JsonSerializable
 {
-    /**
-     * Convert the entity into an array mapping properties/columns to values.
-     */
     public function toArray(): array
     {
         return get_object_vars($this);
     }
 
-    /**
-     * Specify data which should be serialized to JSON.
-     */
     public function jsonSerialize(): mixed
     {
         return $this->toArray();
     }
 
-    /**
-     * Automatically convert the entity to a JSON string when treated as a string.
-     */
     public function __toString(): string
     {
         return json_encode($this->jsonSerialize());
     }
-
-    // --- ArrayAccess Interface Implementation ---
 
     #[ReturnTypeWillChange]
     public function offsetExists(mixed $offset): bool

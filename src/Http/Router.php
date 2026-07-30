@@ -88,10 +88,8 @@ class Router
 
             $routePattern = $this->compilePattern($route['path']);
             if (preg_match($routePattern, $requestPath, $matches)) {
-                // Filter matches to get named path parameters
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
 
-                // Add parameters to request attributes
                 foreach ($params as $name => $value) {
                     $request = $request->withAttribute($name, $value);
                 }

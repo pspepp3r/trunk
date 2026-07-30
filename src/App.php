@@ -22,6 +22,7 @@ class App
     private array $defaultProviders = [
         \Trunk\Providers\LogServiceProvider::class,
         \Trunk\Providers\DatabaseServiceProvider::class,
+        \Trunk\Providers\CacheServiceProvider::class,
         \Trunk\Providers\SessionServiceProvider::class,
         \Trunk\Providers\EventServiceProvider::class,
         \Trunk\Providers\AuthServiceProvider::class,
@@ -34,7 +35,6 @@ class App
         $this->router = new Router($this->container);
         $this->pipeline = new Pipeline($this->container);
 
-        // Bind standard components in container
         $this->container->singleton(Container::class, $this->container);
         $this->container->singleton(Router::class, $this->router);
         $this->container->singleton(Pipeline::class, $this->pipeline);
@@ -78,7 +78,6 @@ class App
     public function configure(string $basePath): void
     {
         $this->basePath = $basePath;
-        // Load .env if present
         if (file_exists("$basePath/.env")) {
             $dotenv = \Dotenv\Dotenv::createImmutable($basePath);
             $dotenv->safeLoad();
@@ -98,7 +97,6 @@ class App
 
         $this->container->singleton(\Trunk\Config\Repository::class, $configRepo);
 
-        // Register Service Providers
         $providers = $configRepo->get('provider.providers');
         if ($providers) $this->defaultProviders = [...$this->defaultProviders, ...$providers];
 
@@ -117,13 +115,11 @@ class App
             }
         }
 
-        // Register default core middlewares
         $this->use(\Trunk\Middleware\CorsMiddleware::class);
         $this->use(\Trunk\Middleware\JsonBodyParserMiddleware::class);
         $this->use(\Trunk\Middleware\LogMiddleware::class);
         $this->use(\Trunk\Session\SessionMiddleware::class);
 
-        // Register built-in health check route
         $this->get('/health', fn() => \Trunk\Http\Response::json([
             'status' => 'healthy',
             'time' => time(),

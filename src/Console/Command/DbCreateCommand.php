@@ -61,9 +61,6 @@ class DbCreateCommand extends Command
         Loop::get()->run();
     }
 
-    /**
-     * Connects without selecting a database (MySQL allows this) and creates it if missing.
-     */
     private function createMysqlDatabase(array $dbConfig, string $databaseName): PromiseInterface
     {
         $adminConfig = $dbConfig;
@@ -74,11 +71,7 @@ class DbCreateCommand extends Command
         return $driver->query("CREATE DATABASE IF NOT EXISTS `{$databaseName}`");
     }
 
-    /**
-     * Postgres has no CREATE DATABASE IF NOT EXISTS, and every connection must select a
-     * database - so this connects to the "postgres" maintenance database (present on every
-     * install), checks pg_database, and only issues CREATE DATABASE if it's missing.
-     */
+    /** Postgres has no CREATE DATABASE IF NOT EXISTS - see the Console guide's db:create section. */
     private function createPostgresDatabase(array $dbConfig, string $databaseName): PromiseInterface
     {
         $adminConfig = $dbConfig;

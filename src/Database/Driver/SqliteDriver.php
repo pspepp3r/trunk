@@ -17,7 +17,12 @@ class SqliteDriver implements DriverInterface
     {
         $factory = new Factory();
         $database = $config['database'] ?? ':memory:';
-        
+
+        // Windows path-normalization workaround - see the Database guide's SQLite section.
+        if (DIRECTORY_SEPARATOR === '\\' && $database !== ':memory:') {
+            $database = str_replace('/', '\\', $database);
+        }
+
         $this->db = $factory->openLazy($database);
     }
 

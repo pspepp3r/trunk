@@ -13,7 +13,6 @@ class CorsMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, callable $next): PromiseInterface
     {
-        // Handle preflight OPTIONS request
         if ($request->getMethod() === 'OPTIONS') {
             $response = Response::empty(204, [
                 'Access-Control-Allow-Origin' => '*',

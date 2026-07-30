@@ -42,7 +42,6 @@ class SessionMiddleware implements MiddlewareInterface
                 $this->store->set($session->getId(), $session->toArray());
             }
 
-            // Set cookie in response header
             $cookieValue = sprintf(
                 '%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax',
                 $this->cookieName,
