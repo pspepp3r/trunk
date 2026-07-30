@@ -50,6 +50,10 @@ echo json_encode(['id' => $response->getId(), 'name' => $response->getName()]);
 
 A non-zero exit code rejects the returned promise with `Trunk\Grpc\Exception\GrpcCallException`, carrying the worker's stderr output.
 
+::: tip Windows: this works out of the box, no configuration needed
+`react/child-process`'s default pipe-based stdio isn't supported on Windows - it's blocking there, which would defeat the entire point of running the worker off the event loop. `GrpcClient` spawns the child process with socket-pair descriptors instead of the default pipes, which support non-blocking I/O on every platform, Windows included. `Trunk\Console\Command\StartCommand`'s `--watch` mode (see [Console](/guide/console)) uses the same technique for the same reason, if you're curious what else in the framework hits this.
+:::
+
 ### Requirements
 
 `grpc/grpc` and `google/protobuf` (plus the `ext-grpc` PECL extension) are **not** core dependencies - add them to your own app only if you need real gRPC calls. `GrpcClient` itself has no gRPC-specific dependency; it's a generic blocking-call-to-child-process bridge.

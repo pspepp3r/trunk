@@ -45,6 +45,7 @@ See [Authentication](/guide/authentication) for how `JWT_SECRET` is used.
 ## Notes
 
 - Commands that touch the database (`migrate*`, `orm:schema-diff`) boot service providers and run the ReactPHP event loop for the duration of the command, then exit cleanly.
+- `start --watch` restarts the server in a child process (`react/child-process`) on file changes under `src/`, `config/`, and `bootstrap/`. On Windows, the default pipe-based stdio that package uses is blocking and unsupported, so this spawns the child with socket-pair descriptors instead - same technique `Trunk\Grpc\GrpcClient` uses for the same reason (see [gRPC Client](/guide/grpc)). This is handled for you; nothing to configure.
 - `db:create` supports `mysql` and `pgsql` only. MySQL connects without selecting a database and runs `CREATE DATABASE IF NOT EXISTS`; Postgres has no such clause, so it connects to the `postgres` maintenance database, checks `pg_database` first, and only creates it if missing. The database user needs `CREATE DATABASE` privileges either way.
 - `make:*` commands are purely file generators - they don't touch the database or require it to be configured.
 

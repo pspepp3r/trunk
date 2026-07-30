@@ -2,7 +2,7 @@
 
 Trunk includes a generic GraphQL-over-HTTP handler built on [`webonyx/graphql-php`](https://github.com/webonyx/graphql-php), using its `ReactPromiseAdapter` - so resolvers return `React\Promise\PromiseInterface` directly (an ORM `Repository` call, for instance) and the whole query executes non-blockingly, just like everything else in Trunk.
 
-The handler itself is app-agnostic; you supply the schema.
+The handler itself is app-agnostic; you supply the schema. This isn't part of the skeleton by default - `composer require webonyx/graphql-php`, then follow this page to add it to your own app.
 
 ## Defining types
 
